@@ -62,10 +62,6 @@ button:focus-visible, input:focus-visible, .cell:focus-visible { outline: 2px so
 .btn:hover { border-color: var(--accent); }
 .btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
 
-.phases { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
-.phase { border-radius: 10px; padding: 12px 14px; display: grid; gap: 2px; font-size: 13px; }
-.phase .m { font-weight: 600; font-size: 15px; }
-.phase .dates { color: var(--muted); }
 .st-초기 { background: var(--early); }
 .st-중기 { background: var(--mid); }
 .st-후기 { background: var(--late); }
@@ -157,8 +153,6 @@ footer { color: var(--muted); font-size: 12.5px; }
     <button class="btn" id="goToday" type="button">오늘로 이동</button>
     <div class="range tnum" id="range"></div>
   </section>
-
-  <section class="phases" id="phases" aria-label="월령별 요약"></section>
 
   <div class="tabs" role="tablist">
     <button role="tab" id="tab-cal" aria-selected="true" type="button">달력</button>
@@ -265,23 +259,6 @@ footer { color: var(--muted); font-size: 12.5px; }
       (td ? ' · 오늘은 <b>D' + td + '</b>' : '');
   }
 
-  function renderPhases() {
-    const MONTHS = [
-      [6, 1, 30, '초기', '10배죽 → 8배죽', '1회 → 2회 (D22~)', '10~80g'],
-      [7, 31, 60, '중기', '6배죽 (D32~)', '2회', '70~100g'],
-      [8, 61, 90, '중기', '5배죽 (D62~)', '2회', '100~120g'],
-      [9, 91, 120, '후기', '4배죽 (D92~)', '3회 + 간식 1', '100~120g'],
-      [10, 121, 150, '후기', '3배죽 → 진밥 (D137~)', '3회 + 간식 1~2', '120~150g'],
-    ];
-    $('phases').innerHTML = MONTHS.map(([m, a, b, st, tex, cnt, amt]) => {
-      const p = PLAN[a - 1];
-      return '<div class="phase st-' + st + '"><span class="m">' + m + '개월 · ' + st + '</span>' +
-        '<span class="dates tnum">' + fmt(dateOf(a)) + ' ~ ' + fmt(dateOf(b)) + ' · D' + a + '~' + b + '</span>' +
-        '<span>' + tex + '</span><span>' + cnt + ' · 1회 ' + amt + '</span>' +
-        '<span class="dates">고기 하루 ' + p.meat + ' · 수유 ' + p.milk + '</span></div>';
-    }).join('');
-  }
-
   function renderGrid() {
     $('monthTitle').textContent = viewY + '년 ' + (viewM + 1) + '월';
     const first = new Date(viewY, viewM, 1);
@@ -370,7 +347,7 @@ footer { color: var(--muted); font-size: 12.5px; }
     store('bf-start', s);
     const td = dOf(TODAY);
     if (!keepView) { selD = td || 1; showMonthOf(dateOf(selD)); }
-    renderRange(); renderPhases(); renderGrid(); renderDetail(); renderList(); renderAllergy();
+    renderRange(); renderGrid(); renderDetail(); renderList(); renderAllergy();
   }
 
   $('grid').addEventListener('click', (e) => {
