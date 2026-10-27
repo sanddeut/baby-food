@@ -17,24 +17,24 @@
     ['v', '브로콜리', 0, '꽃 부분만 익혀서 곱게 갈기'],
     ['v', '감자', 0],
     ['v', '단호박', 0],
+    ['p', '달걀노른자', 1, '완숙(10분 이상 삶은) 노른자. 1일차 ¼작은술 → 2배씩 → 5일차 노른자 ½개'],
     ['v', '양배추', 0, '잎 부분만 익혀서 곱게 갈기'],
     ['v', '청경채', 0, '잎 부분만 익혀서 곱게 갈기'],
     ['v', '고구마', 0],
     ['g', '오트밀', 0, '곱게 간 오트밀을 쌀과 섞어 죽'],
     ['p', '닭고기', 0, '안심, 삶아서 곱게 다짐, 10g'],
-    ['p', '달걀노른자', 1, '완숙(10분 이상 삶은) 노른자. 1일차 ¼작은술 → 2배씩 → 5일차 노른자 ½개'],
     ['v', '무', 0],
-    ['v', '당근', 0],
     ['p', '두부', 1, '데쳐서 으깸. 1일차 1작은술(약 3g) → 2배씩 → 5일차 15g'],
-    ['v', '시금치', 0, '잎만 데쳐서 다짐'],
-    ['f', '사과', 0, '익혀서 갈아 1~2작은술, 식후'],
-    ['p', '대구살', 1, '흰살생선, 가시 제거 후 푹 쪄서 다짐. 1일차 1작은술 → 2배씩 → 5일차 15g'],
-    ['v', '배추', 0, '잎 부분만 데쳐서 다짐'],
+    ['v', '당근', 0],
     ['p', '달걀흰자', 1, '완숙 흰자만. 1일차 ¼작은술 → 2배씩 → 5일차 흰자 ½개 (통과 시 완숙 전란 사용)'],
-    ['v', '양파', 0],
+    ['v', '시금치', 0, '잎만 데쳐서 다짐'],
+    ['p', '대구살', 1, '흰살생선, 가시 제거 후 푹 쪄서 다짐. 1일차 1작은술 → 2배씩 → 5일차 15g'],
+    ['f', '사과', 0, '익혀서 갈아 1~2작은술, 식후'],
     ['g', '밀', 1, '아기국수를 잘게 잘라 푹 익힘. 1일차 1작은술 → 2배씩 → 5일차 국수 10g'],
-    ['f', '바나나', 0, '으깨서 1~2작은술, 식후'],
+    ['v', '배추', 0, '잎 부분만 데쳐서 다짐'],
     ['d', '요거트', 1, '무가당 플레인 요거트, 식후. 1일차 1작은술 → 2배씩 → 5일차 2~3숟가락'],
+    ['v', '양파', 0],
+    ['f', '바나나', 0, '으깨서 1~2작은술, 식후'],
     ['v', '표고버섯', 0, '기둥 떼고 다짐'],
     ['d', '아기치즈', 0, '요거트로 우유 단백질 통과 후 진행. 아기치즈 ¼장을 죽에 녹임'],
     ['a', '땅콩', 1, '무첨가 100% 땅콩버터를 따뜻한 물에 묽게 풀어 죽에 섞음 (통땅콩·덩어리 금지). 1일차 ⅛작은술 → 2배씩 → 5일차 1작은술'],
@@ -81,23 +81,17 @@
     }
     return target;
   }
+  // 질감은 10배죽(초기) → 5배죽(중기) → 3배죽(후기) 세 단계만 사용
   const T = {
-    eight: safeDay(15),
     twoMeals: safeDay(22),
     mid: safeDay(32),
-    five: safeDay(62),
     late: safeDay(92),
-    three: safeDay(122),
-    jin: safeDay(137),
   };
+  const SNACK2 = 122; // 간식 1~2회로 늘리는 날
   const TRANSITIONS = {
-    [T.eight]: '8배죽으로 전환 (1회 30~50g 거부 없이 먹으면)',
     [T.twoMeals]: '하루 2회로 늘림 (2회차는 통과한 재료만)',
-    [T.mid]: '중기 시작: 6배죽 (전환 기준 충족 시, 미충족이면 8배죽 1주 더)',
-    [T.five]: '5배죽으로 전환 (6배죽 알갱이 구역질 없으면)',
-    [T.late]: '후기 시작: 4배죽·하루 3회·간식 1회 (전환 기준 충족 시)',
-    [T.three]: '3배죽으로 전환',
-    [T.jin]: '진밥으로 전환 (3배죽 잘 먹으면)',
+    [T.mid]: '중기 시작: 5배죽으로 (전환 기준 충족 시, 미충족이면 10배죽 1주 더). 처음 2~3일은 10배죽과 반반 섞어서',
+    [T.late]: '후기 시작: 3배죽·하루 3회·간식 1회 (전환 기준 충족 시). 처음 2~3일은 5배죽과 반반 섞어서',
   };
 
   const DEFAULT_PREP = {
@@ -110,16 +104,12 @@
   function phase(d) {
     const month = 6 + Math.floor((d - 1) / 30);
     let p;
-    if (d < T.eight) p = { stage: '초기', texture: '10배죽', meals: 1, amount: d <= 3 ? '10~20g (1~2숟가락)' : d <= 7 ? '20~30g' : '30~50g' };
-    else if (d < T.twoMeals) p = { stage: '초기', texture: '8배죽', meals: 1, amount: '50~60g' };
-    else if (d < T.mid) p = { stage: '초기', texture: '8배죽', meals: 2, amount: '50~80g' };
-    else if (d < T.five) p = { stage: '중기', texture: '6배죽', meals: 2, amount: d <= 45 ? '70~90g' : '80~100g' };
-    else if (d < T.late) p = { stage: '중기', texture: '5배죽', meals: 2, amount: '100~120g' };
-    else if (d < T.three) p = { stage: '후기', texture: '4배죽', meals: 3, amount: d <= 105 ? '100~120g' : '120g' };
-    else if (d < T.jin) p = { stage: '후기', texture: '3배죽', meals: 3, amount: '120~150g' };
-    else p = { stage: '후기', texture: '진밥', meals: 3, amount: '120~150g' };
+    if (d < T.twoMeals) p = { stage: '초기', texture: '10배죽', meals: 1, amount: d <= 3 ? '10~20g (1~2숟가락)' : d <= 7 ? '20~30g' : d <= 14 ? '30~50g' : '50~60g' };
+    else if (d < T.mid) p = { stage: '초기', texture: '10배죽', meals: 2, amount: '50~80g' };
+    else if (d < T.late) p = { stage: '중기', texture: '5배죽', meals: 2, amount: d <= 45 ? '70~90g' : d <= 61 ? '80~100g' : '100~120g' };
+    else p = { stage: '후기', texture: '3배죽', meals: 3, amount: d <= 105 ? '100~120g' : d < SNACK2 ? '120g' : '120~150g' };
     p.month = month;
-    p.snack = d >= T.three ? '1~2회' : d >= T.late ? '1회' : '';
+    p.snack = d >= SNACK2 ? '1~2회' : d >= T.late ? '1회' : '';
     p.meat = month === 6 ? '10~20g' : month <= 8 ? '20~30g' : '30~40g';
     p.milk = month === 6 ? '700~900ml' : month <= 8 ? '600~800ml' : '500~700ml';
     p.transition = TRANSITIONS[d] || '';
@@ -179,7 +169,7 @@
     if (cat === 'g' && name === '쌀') meals.push(['★쌀미음']);
     else {
       const grain = cat === 'g' ? '쌀·' + NEW : '쌀';
-      const protein = cat === 'p' ? NEW : '소고기';
+      const protein = cat === 'p' ? (ph.meals === 1 && name !== '소고기' ? '소고기 + ' + NEW : NEW) : '소고기';
       const vegs = cat === 'v' ? [NEW].concat(ph.stage === '초기' ? [] : rot(known.v, d, 1)) : rot(known.v, d, nVeg);
       const m1 = [grain, protein].concat(vegs);
       if (cat === 'a' || (cat === 'd' && name === '아기치즈')) m1.push(NEW);
@@ -197,7 +187,7 @@
       meals.push([g, protein].concat(rot(known.v, d + 2 * k + 1, nVeg)));
     }
     let snack = '';
-    if (ph.snack) snack = rot(known.f.concat(known.d), d, d >= T.three ? 2 : 1).join(', ');
+    if (ph.snack) snack = rot(known.f.concat(known.d), d, d >= SNACK2 ? 2 : 1).join(', ');
 
     // 유지 후보: 통과한 고위험 식품 (테스트 중인 것과 같은 계열 제외). 실제 선택은 plan()에서
     const keepAll = [...new Set(passedRisky.filter((x) => !family.includes(x)).map((x) => keepName(x, eggOk)).filter(Boolean))];

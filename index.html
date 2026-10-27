@@ -7,9 +7,9 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@700&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
-/* 레이아웃: 위에 시작일, 가운데 실제 날짜 달력(셀 = 그날 질감·끼니별 전체 재료), 선택한 날 상세는 달력 옆(넓은 화면) 또는 아래(폰) */
+/* 레이아웃: 시작일 → 보기 탭 → (주간) 하루 한 줄 플래너 / (월간) 달력. 재료는 역할별 색 칩, 알레르기 테스트는 맨 위 띠 */
 :root {
   --bg: #F5F7F2;
   --surface: #FFFFFF;
@@ -23,6 +23,9 @@
   --late: #CDE0EE;
   --risk: #A94F14;
   --risk-bg: #FBE5D3;
+  --new-bg: #E3F0E6;
+  --pro-bg: #F4E9E1;
+  --veg-bg: #EEF2E8;
   --font-display: "Gowun Batang", "Noto Serif KR", serif;
   --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
 }
@@ -30,13 +33,13 @@
   :root:not([data-theme="light"]) {
     --bg: #131714; --surface: #1B201C; --fg: #E6ECE5; --muted: #9AA69D; --line: #2D3530;
     --accent: #7FC59E; --accent-fg: #0F1A13; --early: #4A4227; --mid: #2B4731; --late: #273D4B;
-    --risk: #F2A46C; --risk-bg: #3D281A; color-scheme: dark;
+    --risk: #F2A46C; --risk-bg: #3D281A; --new-bg: #1F3527; --pro-bg: #352A23; --veg-bg: #252B24; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #131714; --surface: #1B201C; --fg: #E6ECE5; --muted: #9AA69D; --line: #2D3530;
   --accent: #7FC59E; --accent-fg: #0F1A13; --early: #4A4227; --mid: #2B4731; --late: #273D4B;
-  --risk: #F2A46C; --risk-bg: #3D281A; color-scheme: dark;
+  --risk: #F2A46C; --risk-bg: #3D281A; --new-bg: #1F3527; --pro-bg: #352A23; --veg-bg: #252B24; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 body {
@@ -45,104 +48,123 @@ body {
   padding-right: max(16px, env(safe-area-inset-right, 0px));
   padding-block: 24px 48px;
 }
-.wrap { max-width: 1440px; margin: 0 auto; display: grid; gap: 24px; }
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 22px; }
 h1 { font-family: var(--font-display); font-size: 30px; line-height: 1.25; margin: 0; text-wrap: balance; }
-h2 { font-family: var(--font-display); font-size: 20px; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-size: 22px; margin: 0; text-wrap: balance; }
+h3 { font-size: 15px; margin: 0 0 6px; }
 .sub { color: var(--muted); margin: 6px 0 0; }
 .tnum { font-variant-numeric: tabular-nums; }
+button { font: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button:disabled { opacity: .4; cursor: default; }
+.btn { border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 8px; padding: 7px 12px; }
+.btn:hover:not(:disabled) { border-color: var(--accent); }
 
 .start { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: end; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
 .start label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); font-weight: 500; }
 .start input[type=date] { font: inherit; font-size: 17px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--fg); }
 .start .range { font-size: 14px; color: var(--muted); }
 .start .range b { color: var(--fg); }
-button { font: inherit; cursor: pointer; }
-button:focus-visible, input:focus-visible, .cell:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.btn { border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 8px; padding: 7px 12px; }
-.btn:hover { border-color: var(--accent); }
-.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
 
-.st-초기 { background: var(--early); }
-.st-중기 { background: var(--mid); }
-.st-후기 { background: var(--late); }
-
-.tabs { display: flex; gap: 6px; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
 .tabs button { border: 1px solid var(--line); background: transparent; color: var(--muted); padding: 6px 14px; border-radius: 999px; }
 .tabs button[aria-selected=true] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
 
-.main { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
-@media (max-width: 1200px) { .main { grid-template-columns: minmax(0, 1fr); } }
+/* 범례 */
+.key { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px; color: var(--muted); align-items: center; }
+.key > span { display: inline-flex; align-items: center; gap: 6px; }
 
-.calhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; }
-.calhead h2 { font-size: 22px; }
+/* 재료 칩 */
+.chips { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.c { display: inline-block; border-radius: 6px; padding: 1px 8px; font-size: 14px; line-height: 1.6; background: var(--veg-bg); color: var(--fg); white-space: nowrap; font-style: normal; }
+.c.pro { background: var(--pro-bg); font-weight: 600; }
+.c.gr { background: transparent; border: 1px dashed var(--line); color: var(--muted); }
+.c.new { background: var(--new-bg); color: var(--accent); font-weight: 700; box-shadow: inset 0 0 0 1.5px var(--accent); }
+.c.new.risk { background: var(--risk-bg); color: var(--risk); box-shadow: inset 0 0 0 1.5px var(--risk); }
+.c.keep { background: transparent; border: 1px solid var(--risk); color: var(--risk); }
+.c.snack { background: transparent; border: 1px solid var(--line); }
+
+/* 주간 */
+.wkhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.wkhead .mid { display: grid; justify-items: center; }
+.wkhead .mid small { color: var(--muted); }
+.days { display: grid; gap: 10px; margin-top: 12px; }
+.day { display: grid; grid-template-columns: 120px minmax(0, 1fr); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.day.today { box-shadow: 0 0 0 2px var(--accent); }
+.day.focus { box-shadow: 0 0 0 2px var(--fg); }
+.day .when { padding: 14px; display: grid; align-content: start; gap: 2px; border-right: 1px solid var(--line); }
+.day .when .dd { font-family: var(--font-display); font-size: 30px; line-height: 1; }
+.day .when .dw { font-weight: 600; }
+.day .when .dw.sun { color: var(--risk); }
+.day .when .dn { font-size: 12px; color: var(--muted); }
+.day .when .st { margin-top: 6px; font-size: 12px; border-radius: 4px; padding: 1px 6px; width: fit-content; }
+.st-초기 { background: var(--early); }
+.st-중기 { background: var(--mid); }
+.st-후기 { background: var(--late); }
+.day .body { min-width: 0; display: grid; align-content: start; }
+.band { padding: 8px 14px; display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; font-size: 14px; background: var(--new-bg); }
+.band.risk { background: var(--risk-bg); }
+.band.none { background: transparent; border-bottom: 1px solid var(--line); color: var(--muted); }
+.band .bt { font-weight: 700; color: var(--accent); }
+.band.risk .bt { color: var(--risk); }
+.band .prog { letter-spacing: 2px; font-size: 11px; }
+.band .wk { color: var(--risk); font-weight: 700; }
+.trn { padding: 6px 14px; font-size: 14px; font-weight: 600; color: var(--accent); border-bottom: 1px solid var(--line); }
+.meta { padding: 10px 14px 0; font-size: 13.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.meta b { color: var(--fg); font-weight: 600; }
+.meals { list-style: none; margin: 0; padding: 8px 14px 12px; display: grid; gap: 6px; }
+.meals li { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 8px; align-items: start; }
+.meals .lbl { font-size: 13px; color: var(--muted); padding-top: 3px; }
+.prep { padding: 0 14px 12px; font-size: 13px; color: var(--muted); }
+.prep b { color: var(--fg); font-weight: 600; }
+@media (max-width: 640px) {
+  .day { grid-template-columns: minmax(0, 1fr); }
+  .day .when { border-right: 0; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; padding: 10px 14px; }
+  .day .when .dd { font-size: 24px; }
+  .day .when .st { margin: 0 0 0 auto; }
+}
+
+/* 월간 */
+.calhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
 .gridwrap { overflow-x: auto; }
-.grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; min-width: 840px; }
+.grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; min-width: 860px; }
 .dow { font-size: 12px; color: var(--muted); text-align: center; padding: 4px 0; font-weight: 500; }
 .dow.sun { color: var(--risk); }
-.cell { min-height: 150px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 6px 7px; display: flex; flex-direction: column; gap: 4px; text-align: left; color: var(--fg); min-width: 0; }
-.cell.off { background: transparent; border-style: dashed; opacity: .55; }
-.cell.blank { visibility: hidden; }
+.cell { min-height: 132px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 0; display: flex; flex-direction: column; text-align: left; color: var(--fg); min-width: 0; overflow: hidden; }
+.cell:hover { border-color: var(--accent); }
+.cell.off { background: transparent; border-style: dashed; opacity: .5; min-height: 60px; }
+.cell.blank { visibility: hidden; min-height: 0; }
 .cell.today { box-shadow: inset 0 0 0 2px var(--accent); }
-.cell.sel { border-color: var(--fg); box-shadow: 0 0 0 1px var(--fg); }
-.cell .top { display: flex; justify-content: space-between; gap: 4px; font-size: 12px; }
-.cell .date { font-weight: 600; }
-.cell .dn { color: var(--muted); }
-.chip { font-size: 11px; border-radius: 4px; padding: 0 4px; width: fit-content; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cell .tags { display: flex; align-items: center; gap: 6px; }
-.cell .dots { letter-spacing: 1px; font-size: 10px; color: var(--muted); }
-.cell .ml { font-size: 12.5px; line-height: 1.4; word-break: keep-all; overflow-wrap: anywhere; }
-.cell .ml b.n.r { color: var(--risk); }
-.cell .sn { font-size: 11.5px; color: var(--muted); line-height: 1.35; }
-.cell .kp { font-size: 11.5px; color: var(--muted); line-height: 1.35; }
-.cell .wk { font-size: 11px; color: var(--risk); font-weight: 600; }
-.cell .tr { font-size: 11px; color: var(--accent); font-weight: 600; margin-top: auto; }
+.cell .top { display: flex; justify-content: space-between; gap: 4px; font-size: 12px; padding: 5px 7px 3px; }
+.cell .top b { font-size: 14px; }
+.cell .top span { color: var(--muted); }
+.cell .cb { font-size: 12px; font-weight: 700; padding: 2px 7px; background: var(--new-bg); color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cell .cb.risk { background: var(--risk-bg); color: var(--risk); }
+.cell .cb.none { background: transparent; color: var(--muted); font-weight: 500; }
+.cell .cm { padding: 4px 7px 6px; display: grid; gap: 2px; font-size: 12px; line-height: 1.35; }
+.cell .cm .x { color: var(--muted); }
+.cell .cm .pr { font-weight: 600; }
+.cell .tr { font-size: 11px; font-weight: 700; color: var(--accent); padding: 0 7px 5px; margin-top: auto; }
 
-.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); margin-top: 10px; }
-.legend span { display: inline-flex; align-items: center; gap: 5px; }
-.sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
-
-.detail { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: grid; gap: 14px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
-@media (max-width: 900px) { .detail { position: static; } }
-.detail .when { font-family: var(--font-display); font-size: 22px; }
-.kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 14px; margin: 0; }
-.kv dt { color: var(--muted); }
-.kv dd { margin: 0; font-weight: 500; }
-.meals { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
-.meals li { display: grid; grid-template-columns: 64px 1fr; gap: 8px; font-size: 14px; }
-.meals .lbl { color: var(--muted); font-size: 13px; }
-b.n { color: var(--accent); }
-.test { border-radius: 8px; padding: 10px 12px; background: var(--bg); font-size: 14px; display: grid; gap: 4px; }
-.test.risk { background: var(--risk-bg); }
-.test .t { font-weight: 600; }
-.test.risk .t { color: var(--risk); }
-.trn { font-size: 14px; border-left: 3px solid var(--accent); padding-left: 10px; }
-.sec-title { font-size: 12px; letter-spacing: .06em; color: var(--muted); font-weight: 600; margin: 0 0 6px; }
-
+/* 표 */
 .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
-table { border-collapse: collapse; width: 100%; font-size: 13px; min-width: 900px; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; min-width: 960px; }
 th, td { padding: 7px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
 th { position: sticky; top: 0; background: var(--surface); color: var(--muted); font-weight: 600; font-size: 12px; }
 tr.today td { background: var(--mid); }
-td.risk { color: var(--risk); font-weight: 600; }
+td.risk, td.r { color: var(--risk); font-weight: 600; }
 
-.allergy { display: flex; flex-wrap: wrap; gap: 6px; }
-.allergy .a { font-size: 13px; border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; background: var(--surface); }
-.allergy .a.risk { border-color: var(--risk); color: var(--risk); background: var(--risk-bg); }
-.allergy .a small { color: var(--muted); margin-left: 4px; }
-.allergy .a.risk small { color: inherit; opacity: .8; }
-
-.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; font-size: 14px; }
-.rules ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
-.rules h3 { font-size: 15px; margin: 0 0 6px; }
+.info { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; font-size: 14px; }
+.info ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
+.info a { color: var(--accent); }
 footer { color: var(--muted); font-size: 12.5px; }
-@media (prefers-reduced-motion: no-preference) { .cell { transition: border-color .15s; } }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <h1>6~10개월 이유식 달력</h1>
-    <p class="sub">시작일만 고르면 150일 일정이 실제 날짜에 맞춰 채워집니다. 날짜를 누르면 그날 질감·횟수·양·식단·알레르기 테스트가 나옵니다.</p>
+    <p class="sub">시작일을 고르면 150일 일정이 실제 날짜에 맞춰 채워집니다. 매일 볼 때는 주간 보기가 가장 편해요.</p>
   </header>
 
   <section class="start" aria-label="시작일">
@@ -154,80 +176,101 @@ footer { color: var(--muted); font-size: 12.5px; }
   </section>
 
   <div class="tabs" role="tablist">
-    <button role="tab" id="tab-cal" aria-selected="true" type="button">달력</button>
+    <button role="tab" id="tab-week" aria-selected="true" type="button">주간</button>
+    <button role="tab" id="tab-month" aria-selected="false" type="button">월간</button>
     <button role="tab" id="tab-list" aria-selected="false" type="button">전체 목록</button>
     <button role="tab" id="tab-allergy" aria-selected="false" type="button">알레르기 일정</button>
   </div>
 
-  <section id="view-cal" class="main">
-    <div>
-      <div class="calhead">
-        <button class="btn" id="prev" type="button" aria-label="이전 달">‹ 이전</button>
-        <h2 id="monthTitle" class="tnum"></h2>
-        <button class="btn" id="next" type="button" aria-label="다음 달">다음 ›</button>
-      </div>
-      <div class="gridwrap"><div class="grid" id="grid"></div></div>
-      <div class="legend">
-        <span><i class="sw st-초기"></i>초기</span>
-        <span><i class="sw st-중기"></i>중기</span>
-        <span><i class="sw st-후기"></i>후기</span>
-        <span style="color:var(--risk)">⚠ 고위험 알레르기 식품</span>
-        <span><b style="color:var(--accent)">굵은 글씨</b> 테스트 중인 새 재료</span>
-        <span>●○○ 테스트 일차 (일반 3일 · 고위험 5일)</span>
-        <span>유지 = 통과한 고위험 식품, 주 2회 이상 아무 끼니에</span>
-        <span style="color:var(--accent)">▶ 질감·횟수 바뀌는 날</span>
-      </div>
+  <div class="key">
+    <span>모든 끼니는 <b>쌀죽</b>이 기본 (아래엔 쌀 외 재료만)</span>
+    <span><i class="c pro">고기·생선</i></span>
+    <span><i class="c">채소·과일</i></span>
+    <span><i class="c new">새 재료</i></span>
+    <span><i class="c new risk">⚠ 고위험 새 재료</i></span>
+    <span><i class="c keep">유지</i> 통과한 고위험 식품, 아무 끼니에 섞기</span>
+  </div>
+
+  <section id="view-week">
+    <div class="wkhead">
+      <button class="btn" id="wprev" type="button">‹ 지난주</button>
+      <div class="mid"><h2 id="wtitle" class="tnum"></h2><small id="wsub" class="tnum"></small></div>
+      <button class="btn" id="wnext" type="button">다음주 ›</button>
     </div>
-    <aside class="detail" id="detail" aria-live="polite"></aside>
+    <div class="days" id="days"></div>
+  </section>
+
+  <section id="view-month" hidden>
+    <div class="calhead">
+      <button class="btn" id="prev" type="button">‹ 이전 달</button>
+      <h2 id="monthTitle" class="tnum"></h2>
+      <button class="btn" id="next" type="button">다음 달 ›</button>
+    </div>
+    <p class="sub" style="margin:0 0 8px">날짜를 누르면 그 주의 주간 보기로 이동합니다.</p>
+    <div class="gridwrap"><div class="grid" id="grid"></div></div>
   </section>
 
   <section id="view-list" hidden>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>날짜</th><th>일차</th><th>단계·질감</th><th>횟수 × 1회 양</th><th>1회차 (오전)</th><th>2회차</th><th>3회차</th><th>간식</th><th>유지 식품</th><th>알레르기 테스트</th></tr></thead>
+        <thead><tr><th>날짜</th><th>일차</th><th>단계</th><th>횟수 × 1회 양</th><th>1회</th><th>2회</th><th>3회</th><th>간식</th><th>유지</th><th>알레르기 테스트</th></tr></thead>
         <tbody id="tbody" class="tnum"></tbody>
       </table>
     </div>
   </section>
 
   <section id="view-allergy" hidden>
-    <p class="sub" style="margin:0 0 10px">새 재료는 한 번에 1가지, 오전 첫 끼에. 일반 재료는 3일, ⚠ 고위험 식품은 5일 동안 테스트합니다. 고위험 식품 첫날이 주말이면 시작일을 미뤄 평일에 맞추세요.</p>
-    <div class="allergy" id="allergyList"></div>
+    <p class="sub" style="margin:0 0 10px">새 재료는 한 번에 1가지, 오전 첫 끼에. 일반 재료 3일, ⚠ 고위험 식품 5일. 고위험 식품 첫날이 주말이면 시작일을 미뤄 평일에 맞추세요.</p>
+    <div class="tablewrap">
+      <table style="min-width:640px">
+        <thead><tr><th>순서</th><th>재료</th><th>기간</th><th>날짜</th><th>손질·양</th></tr></thead>
+        <tbody id="abody" class="tnum"></tbody>
+      </table>
+    </div>
   </section>
 
-  <section class="rules" aria-label="기본 규칙">
+  <section class="info" aria-label="기본 규칙">
     <div>
       <h3>알레르기 테스트</h3>
       <ul>
-        <li>새 재료는 한 번에 1가지. 일반 재료 3일, ⚠ 고위험 식품 5일</li>
-        <li>고위험 식품: 평일 오전 첫 끼, 아주 소량 → 하루씩 2배로</li>
+        <li>새 재료는 한 번에 1가지. 일반 3일, ⚠ 고위험 5일</li>
+        <li>고위험: 평일 오전 첫 끼, 아주 소량 → 하루씩 2배</li>
         <li>먹인 뒤 2시간은 집에서 관찰 (어린이집 첫 시도 X)</li>
         <li>발진·두드러기·구토·설사·혈변 → 중단, 사진 남기고 소아과. 진료 전까지 새 재료 멈춤</li>
-        <li>호흡곤란·쌕쌕거림·입술 붓기·처짐 → 즉시 119·응급실</li>
+        <li>호흡곤란·쌕쌕거림·입술 붓기·처짐 → 즉시 119</li>
         <li>아픈 날, 예방접종 당일·다음날은 새 재료 시작 보류 (그만큼 시작일 미루기)</li>
-        <li>심한 아토피나 이미 알레르기 진단이 있으면 달걀·땅콩 전 소아과 상담</li>
       </ul>
     </div>
     <div>
-      <h3>질감 전환</h3>
+      <h3>질감 (10 → 5 → 3배죽)</h3>
       <ul>
-        <li>▶ 표시 날에 전환하되, 전환 기준 미충족이면 이전 질감 1주 더</li>
-        <li>일정이 밀리면 시작일을 그만큼 뒤로 바꾸면 전체가 다시 맞춰짐</li>
-        <li>전환 후 거부·구역질 3일 이상 → 이전 단계로, 1주 후 재시도</li>
+        <li>초기 10배죽 · 중기 5배죽 · 후기 3배죽</li>
+        <li>단계 바꿀 때 처음 2~3일은 이전 죽과 반반 섞기</li>
+        <li>전환 기준 미충족·거부 계속 → 이전 단계 1주 더, 시작일을 그만큼 미루면 전체가 다시 맞춰짐</li>
       </ul>
     </div>
     <div>
       <h3>매일 지킬 것</h3>
       <ul>
         <li>소고기 하루 최소 1끼 (철분)</li>
-        <li>굵은 글씨 = 테스트 중인 새 재료, 1회차에만 사용</li>
-        <li>통과한 고위험 식품은 끊지 말고 주 2회 이상 (달력의 "유지")</li>
+        <li>새 재료는 1회차(오전)에만</li>
+        <li>통과한 고위험 식품은 끊지 말고 주 2회 이상 ("유지")</li>
         <li>돌 전 금지: 꿀, 생우유 음료, 간(소금·간장·설탕), 통견과·땅콩 덩어리</li>
+      </ul>
+    </div>
+    <div>
+      <h3>달걀 시기 근거 (노른자 6개월 후반, 흰자 7개월 후반)</h3>
+      <ul>
+        <li>국제 지침은 완숙 달걀을 이유식 초반에 넣고 늦추지 말라고 권함 (<a href="https://hongkong.wyethnutritionsc.org/allergies-immunity/guideline-summary-updated-eaaci-guideline-early-life-food-allergy-prevention" target="_blank" rel="noopener">EAACI 2021</a>, <a href="https://www.aaaai.org/Aaaai/media/Media-Library-PDFs/Allergist%20Resources/Statements%20and%20Practice%20Parameters/A-Consensus-Approach-to-the-Primary-Prevention-of-Food-Allergy-Through-Nutrition-Jan-21-(1).pdf" target="_blank" rel="noopener">AAAAI 합의문 2021</a>, <a href="https://www.healthychildren.org/English/news/Pages/Early-Introduction-of-Peanut-based-Foods-to-Prevent-Allergies.aspx" target="_blank" rel="noopener">AAP 2019</a>)</li>
+        <li>10~12개월에 시작하면 4~6개월 대비 달걀 알레르기 1.6배, 돌 이후는 3.4배 (<a href="https://research.manchester.ac.uk/en/publications/can-early-introduction-of-egg-prevent-egg-allergy-in-infants-a-po/" target="_blank" rel="noopener">Koplin, JACI 2010</a>)</li>
+        <li>아토피 영아에게 6개월부터 익힌 달걀 극소량 → 달걀 알레르기 9% vs 38% (<a href="https://www.egginfo.co.uk/research/two-step-egg-introduction-prevention-egg-allergy-high-risk-infants-eczema-petit-randomised" target="_blank" rel="noopener">PETIT, Lancet 2017</a>)</li>
+        <li>새 음식은 한 번에 한 가지, 약 3~7일 관찰 (<a href="https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=5470" target="_blank" rel="noopener">질병관리청</a>)</li>
+        <li>심한 아토피·식품 알레르기 진단이 있으면 시작 전 소아과 상담</li>
       </ul>
     </div>
   </section>
 
-  <footer>국내 육아서·소아과·보건소 안내에서 흔히 쓰는 기준을 바탕으로 한 일반 일정입니다. 양과 시기는 아기에 따라 다를 수 있으며, 알레르기·질환 이력이 있으면 소아청소년과와 먼저 상의하세요.</footer>
+  <footer>국내 육아서·소아과·보건소 안내와 위 지침을 바탕으로 한 일반 일정입니다. 양과 시기는 아기에 따라 다를 수 있으며, 다니는 소아과의 안내가 있으면 그것을 따르세요.</footer>
 </div>
 
 <script src="plan.js"></script>
@@ -246,24 +289,83 @@ footer { color: var(--muted); font-size: 12.5px; }
   const fmt = (dt) => (dt.getMonth() + 1) + '/' + dt.getDate() + '(' + DOW[dt.getDay()] + ')';
   const fmtLong = (dt) => dt.getFullYear() + '년 ' + (dt.getMonth() + 1) + '월 ' + dt.getDate() + '일 (' + DOW[dt.getDay()] + ')';
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const meal = (s) => esc(s).replace(/★([^ +]+)/g, '<b class="n">$1</b>');
+  const isWeekend = (dt) => dt.getDay() === 0 || dt.getDay() === 6;
+  const sundayOf = (dt) => addDays(dt, -dt.getDay());
 
   const TODAY = new Date(); TODAY.setHours(0, 0, 0, 0);
-  let start, viewY, viewM, selD = 1;
+  let start, weekStart, viewY, viewM, focusD = null;
 
   function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
-
   function dateOf(d) { return addDays(start, d - 1); }
   function dOf(dt) { const n = diffDays(dt, start) + 1; return n >= 1 && n <= P.DAYS ? n : null; }
 
+  // "쌀 + 소고기 + ★애호박" → 역할별 토큰. 쌀은 기본이라 숨기고, 쌀·X 는 "X 섞기"
+  function tokens(meal) {
+    const out = [];
+    meal.split(' + ').forEach((raw, i) => {
+      let s = raw, after = false;
+      if (s.startsWith('식후 ')) { after = true; s = s.slice(3); }
+      const isNew = s.includes('★');
+      s = s.replace('★', '');
+      if (i === 0 && s === '쌀') return;
+      if (i === 0 && s.startsWith('쌀·')) { out.push({ t: s.slice(2) + ' 섞기', k: isNew ? 'new' : 'gr' }); return; }
+      out.push({ t: (after ? '식후 ' : '') + s, k: isNew ? 'new' : i === 1 ? 'pro' : '' });
+    });
+    return out;
+  }
+  function chipHtml(meal, risky) {
+    return tokens(meal).map((x) => {
+      const r = x.k === 'new' && risky;
+      return '<span class="c ' + x.k + (r ? ' risk' : '') + '">' + (r ? '⚠ ' : '') + esc(x.t) + '</span>';
+    }).join('');
+  }
+  const plainMeal = (meal) => tokens(meal).map((x) => x.t).join(' · ') || '쌀미음';
+  const mealLabels = (n) => (n === 1 ? ['오전'] : n === 2 ? ['오전', '오후'] : ['아침', '점심', '저녁']);
+
   function renderRange() {
-    const end = dateOf(P.DAYS);
     const td = dOf(TODAY);
-    $('range').innerHTML = '<b>' + fmtLong(start) + '</b> ~ <b>' + fmtLong(end) + '</b> (150일)' +
-      (td ? ' · 오늘은 <b>D' + td + '</b>' : '');
+    $('range').innerHTML = '<b>' + fmtLong(start) + '</b> ~ <b>' + fmtLong(dateOf(P.DAYS)) + '</b> (150일)' + (td ? ' · 오늘은 <b>D' + td + '</b>' : '');
   }
 
-  function renderGrid() {
+  function band(p, dt) {
+    const t = p.test;
+    if (!t) return '<div class="band none">새 재료 없음 · 통과한 재료로 조합 연습</div>';
+    let h = '<div class="band' + (t.risky ? ' risk' : '') + '"><span class="bt">' + (t.risky ? '⚠ 고위험 ' : '새 재료 ') + esc(t.name) + ' ' + t.dayIndex + '/' + t.days + '일차</span>' +
+      '<span class="prog" aria-hidden="true">' + '●'.repeat(t.dayIndex) + '○'.repeat(t.days - t.dayIndex) + '</span><span>' + esc(t.note) + '</span>';
+    if (t.risky && t.dayIndex === 1 && isWeekend(dt)) h += '<span class="wk">주말 시작 → 시작일을 미뤄 평일로</span>';
+    return h + '</div>';
+  }
+
+  function dayCard(d) {
+    const p = PLAN[d - 1], dt = dateOf(d), t = p.test;
+    const labels = mealLabels(p.meals.length);
+    const isToday = diffDays(dt, TODAY) === 0;
+    let h = '<article class="day' + (isToday ? ' today' : '') + (focusD === d ? ' focus' : '') + '" id="day-' + d + '">' +
+      '<div class="when"><span class="dd tnum">' + dt.getDate() + '</span><span class="dw' + (dt.getDay() === 0 ? ' sun' : '') + '">' + (dt.getMonth() + 1) + '월 ' + DOW[dt.getDay()] + '요일' + (isToday ? ' · 오늘' : '') + '</span>' +
+      '<span class="dn tnum">D' + d + ' · ' + p.month + '개월</span><span class="st st-' + p.stage + '">' + p.stage + ' · ' + p.texture + '</span></div>' +
+      '<div class="body">' + band(p, dt);
+    if (p.transition) h += '<div class="trn">▶ ' + esc(p.transition) + '</div>';
+    h += '<div class="meta tnum"><span>하루 <b>' + p.meals.length + '회</b>' + (p.snack ? ' + 간식' : '') + '</span><span>1회 <b>' + p.amount + '</b></span><span>고기 하루 ' + p.meat + '</span><span>수유 ' + p.milk + '</span></div>';
+    h += '<ul class="meals">' + p.meals.map((m, i) => '<li><span class="lbl">' + labels[i] + '</span><span class="chips">' + (chipHtml(m, t && t.risky) || '<span class="c">쌀미음</span>') + '</span></li>').join('');
+    if (p.snack) h += '<li><span class="lbl">간식</span><span class="chips">' + p.snack.split(', ').map((s) => '<span class="c snack">' + esc(s) + '</span>').join('') + (p.snack.includes(',') ? '<span class="c gr">중 1가지</span>' : '') + '</span></li>';
+    if (p.keep.length) h += '<li><span class="lbl">유지</span><span class="chips">' + p.keep.map((s) => '<span class="c keep">' + esc(s) + '</span>').join('') + '</span></li>';
+    h += '</ul>';
+    if (t) h += '<div class="prep"><b>' + esc(t.name) + ' 손질·양</b> ' + esc(t.prep) + '</div>';
+    return h + '</div></article>';
+  }
+
+  function renderWeek() {
+    const end = addDays(weekStart, 6);
+    $('wtitle').textContent = (weekStart.getMonth() + 1) + '/' + weekStart.getDate() + ' ~ ' + (end.getMonth() + 1) + '/' + end.getDate();
+    const ds = [];
+    for (let i = 0; i < 7; i++) { const d = dOf(addDays(weekStart, i)); if (d) ds.push(d); }
+    $('wsub').textContent = ds.length ? 'D' + ds[0] + ' ~ D' + ds[ds.length - 1] : '일정 범위 밖';
+    $('days').innerHTML = ds.map(dayCard).join('') || '<p class="sub">이 주에는 일정이 없습니다.</p>';
+    $('wprev').disabled = diffDays(weekStart, start) <= 0;
+    $('wnext').disabled = diffDays(addDays(weekStart, 7), dateOf(P.DAYS)) > 0;
+  }
+
+  function renderMonth() {
     $('monthTitle').textContent = viewY + '년 ' + (viewM + 1) + '월';
     const first = new Date(viewY, viewM, 1);
     const days = new Date(viewY, viewM + 1, 0).getDate();
@@ -273,22 +375,17 @@ footer { color: var(--muted); font-size: 12.5px; }
       const dt = new Date(viewY, viewM, day);
       const d = dOf(dt);
       const isToday = diffDays(dt, TODAY) === 0;
-      if (!d) {
-        html += '<div class="cell off' + (isToday ? ' today' : '') + '"><div class="top"><span class="date">' + day + '</span></div></div>';
-        continue;
-      }
-      const p = PLAN[d - 1];
-      const t = p.test;
-      const cm = (s) => esc(s.replace(/ \+ /g, '+')).replace(/★([^ +]+)/g, (_, n) => '<b class="n' + (t && t.risky ? ' r' : '') + '">' + (t && t.risky ? '⚠' : '') + n + '</b>');
-      const mealLines = p.meals.map((m) => '<span class="ml">' + cm(m) + '</span>').join('') +
-        (p.snack ? '<span class="sn">간식 ' + esc(p.snack) + '</span>' : '');
-      const dots = t ? '<span class="dots">' + '●'.repeat(t.dayIndex) + '○'.repeat(t.days - t.dayIndex) + '</span>' : '<span class="dots">복습</span>';
-      const wknd = t && t.risky && t.dayIndex === 1 && (dt.getDay() === 0 || dt.getDay() === 6);
-      const keepLine = p.keep.length ? '<span class="kp">유지 ' + esc(p.keep.join('·')) + '</span>' : '';
-      html += '<button type="button" class="cell' + (isToday ? ' today' : '') + (d === selD ? ' sel' : '') + '" data-d="' + d + '" aria-label="' + fmtLong(dt) + ' D' + d + '">' +
-        '<span class="top"><span class="date tnum">' + day + '</span><span class="dn tnum">D' + d + '</span></span>' +
-        '<span class="tags"><span class="chip st-' + p.stage + '">' + p.texture + ' ×' + p.meals.length + '</span>' + dots + '</span>' + mealLines + keepLine + (wknd ? '<span class="wk">주말 시작 → 평일로 미루기</span>' : '') +
-        (p.transition ? '<span class="tr">▶ ' + p.texture + '</span>' : '') + '</button>';
+      if (!d) { html += '<div class="cell off' + (isToday ? ' today' : '') + '"><div class="top"><b>' + day + '</b></div></div>'; continue; }
+      const p = PLAN[d - 1], t = p.test;
+      const cb = t ? '<span class="cb' + (t.risky ? ' risk' : '') + '">' + (t.risky ? '⚠ ' : '+ ') + esc(t.name) + ' ' + t.dayIndex + '/' + t.days + '</span>' : '<span class="cb none">새 재료 없음</span>';
+      const ms = p.meals.map((m, i) => {
+        const txt = tokens(m).map((x) => (x.k === 'pro' ? '<span class="pr">' + esc(x.t) + '</span>' : esc(x.t))).join('·') || '쌀미음';
+        return '<span><span class="x">' + (i + 1) + '</span> ' + txt + '</span>';
+      }).join('');
+      html += '<button type="button" class="cell' + (isToday ? ' today' : '') + '" data-d="' + d + '" aria-label="' + fmtLong(dt) + ' D' + d + ', 주간 보기로">' +
+        '<span class="top"><b class="tnum">' + day + '</b><span class="tnum">D' + d + ' · ' + p.texture + '</span></span>' + cb +
+        '<span class="cm">' + ms + (p.keep.length ? '<span class="x">유지 ' + esc(p.keep.join('·')) + '</span>' : '') + '</span>' +
+        (p.transition ? '<span class="tr">▶ ' + (p.transition.startsWith('하루') ? '하루 2회 시작' : p.stage + ' 시작') + '</span>' : '') + '</button>';
     }
     $('grid').innerHTML = html;
     $('prev').disabled = new Date(viewY, viewM, 1) <= new Date(start.getFullYear(), start.getMonth(), 1);
@@ -296,95 +393,71 @@ footer { color: var(--muted); font-size: 12.5px; }
     $('next').disabled = new Date(viewY, viewM, 1) >= new Date(end.getFullYear(), end.getMonth(), 1);
   }
 
-  function renderDetail() {
-    const p = PLAN[selD - 1];
-    const dt = dateOf(selD);
-    const labels = p.meals.length === 1 ? ['오전'] : p.meals.length === 2 ? ['1회 (오전)', '2회 (오후)'] : ['아침', '점심', '저녁'];
-    let html = '<div><div class="when tnum">' + fmtLong(dt) + '</div><div class="sub tnum">D' + selD + ' · ' + p.month + '개월</div></div>';
-    if (p.transition) html += '<div class="trn">▶ ' + esc(p.transition) + '</div>';
-    html += '<dl class="kv tnum">' +
-      '<dt>단계·질감</dt><dd>' + p.stage + ' · ' + p.texture + '</dd>' +
-      '<dt>하루 횟수</dt><dd>' + p.meals.length + '회' + (p.snack ? ' + 간식 ' + p.snack : '') + '</dd>' +
-      '<dt>1회 양</dt><dd>' + p.amount + '</dd>' +
-      '<dt>고기</dt><dd>하루 ' + p.meat + '</dd>' +
-      '<dt>수유</dt><dd>하루 ' + p.milk + '</dd></dl>';
-    html += '<div><p class="sec-title">식단</p><ul class="meals">' +
-      p.meals.map((m, i) => '<li><span class="lbl">' + labels[i] + '</span><span>' + meal(m) + '</span></li>').join('') +
-      (p.snack ? '<li><span class="lbl">간식</span><span>' + esc(p.snack) + ' (택1)</span></li>' : '') +
-      (p.keep.length ? '<li><span class="lbl">유지</span><span>' + esc(p.keep.join(', ')) + ' (통과한 고위험 식품, 아무 끼니에 섞기)</span></li>' : '') + '</ul></div>';
-    const t = p.test;
-    if (t) {
-      html += '<div class="test' + (t.risky ? ' risk' : '') + '"><span class="t">' + (t.risky ? '⚠ 고위험 · ' : '') + '알레르기 테스트: ' + esc(t.name) + ' ' + t.dayIndex + '/' + t.days + '일차</span>' +
-        (t.risky && t.dayIndex === 1 && (dt.getDay() === 0 || dt.getDay() === 6) ? '<span><b>주말이라 병원 진료가 어려울 수 있어요.</b> 시작일을 미뤄 평일 오전에 시작하세요.</span>' : '') +
-        '<span>' + esc(t.prep) + '</span><span class="sub" style="margin:0">' + esc(t.note) + '</span></div>';
-    } else {
-      html += '<div class="test"><span class="t">새 재료 없음</span><span>' + esc(p.review) + '</span></div>';
-    }
-    $('detail').innerHTML = html;
-  }
-
   function renderList() {
     const td = dOf(TODAY);
     $('tbody').innerHTML = PLAN.map((p) => {
       const t = p.test;
       return '<tr' + (p.d === td ? ' class="today"' : '') + '><td>' + fmt(dateOf(p.d)) + '</td><td>D' + p.d + '</td>' +
-        '<td>' + p.stage + ' · ' + p.texture + (p.transition ? ' ▶' : '') + '</td>' +
-        '<td>' + p.meals.length + '회 × ' + p.amount + '</td>' +
-        [0, 1, 2].map((i) => '<td>' + (p.meals[i] ? meal(p.meals[i]) : '') + '</td>').join('') +
+        '<td>' + p.stage + ' · ' + p.texture + (p.transition ? ' ▶' : '') + '</td><td>' + p.meals.length + '회 × ' + p.amount + '</td>' +
+        [0, 1, 2].map((i) => '<td>' + (p.meals[i] ? esc(plainMeal(p.meals[i])) : '') + '</td>').join('') +
         '<td>' + esc(p.snack) + '</td><td>' + esc(p.keep.join(', ')) + '</td>' +
-        '<td' + (t && t.risky ? ' class="risk"' : '') + '>' + (t ? (t.risky ? '⚠' : '') + esc(t.name) + ' ' + t.dayIndex + '/' + t.days : '복습') + '</td></tr>';
+        '<td' + (t && t.risky ? ' class="risk"' : '') + '>' + (t ? (t.risky ? '⚠' : '') + esc(t.name) + ' ' + t.dayIndex + '/' + t.days : '-') + '</td></tr>';
     }).join('');
   }
 
   function renderAllergy() {
-    $('allergyList').innerHTML = P.BLOCKS.map((b, i) => {
+    let n = 0;
+    $('abody').innerHTML = P.BLOCKS.map((b, i) => {
       if (b[0] === '-') return '';
       const s = P.SPANS[i], e = s.start + s.len - 1;
-      return '<span class="a' + (b[2] ? ' risk' : '') + '">' + (b[2] ? '⚠ ' : '') + esc(b[1]) + '<small class="tnum">' + fmt(dateOf(s.start)) + '~' + fmt(dateOf(e)) + ' · ' + s.len + '일</small></span>';
+      const warn = b[2] && isWeekend(dateOf(s.start)) ? ' <b style="color:var(--risk)">· 첫날 주말</b>' : '';
+      return '<tr><td>' + (++n) + '</td><td' + (b[2] ? ' class="r"' : '') + '>' + (b[2] ? '⚠ ' : '') + esc(b[1]) + '</td><td>' + s.len + '일</td>' +
+        '<td>' + fmt(dateOf(s.start)) + ' ~ ' + fmt(dateOf(e)) + ' · D' + s.start + '~' + e + warn + '</td><td>' + esc(b[3] || '') + '</td></tr>';
     }).join('');
   }
 
-  function select(d) {
-    selD = d;
-    renderGrid(); renderDetail();
+  const tabs = { week: $('view-week'), month: $('view-month'), list: $('view-list'), allergy: $('view-allergy') };
+  function showTab(k) {
+    Object.keys(tabs).forEach((j) => { tabs[j].hidden = j !== k; $('tab-' + j).setAttribute('aria-selected', String(j === k)); });
+    store('bf-tab', k);
+  }
+  Object.keys(tabs).forEach((k) => $('tab-' + k).addEventListener('click', () => showTab(k)));
+
+  function goTo(d) {
+    focusD = d;
+    weekStart = sundayOf(dateOf(d));
+    renderWeek();
+    showTab('week');
+    const el = document.getElementById('day-' + d);
+    if (el) el.scrollIntoView({ block: 'center' });
   }
 
-  function showMonthOf(dt) { viewY = dt.getFullYear(); viewM = dt.getMonth(); }
-
-  function setStart(s, keepView) {
+  function setStart(s) {
     start = parse(s);
     $('start').value = s;
     store('bf-start', s);
-    const td = dOf(TODAY);
-    if (!keepView) { selD = td || 1; showMonthOf(dateOf(selD)); }
-    renderRange(); renderGrid(); renderDetail(); renderList(); renderAllergy();
+    const base = dOf(TODAY) ? TODAY : start;
+    weekStart = sundayOf(base);
+    viewY = base.getFullYear(); viewM = base.getMonth();
+    renderRange(); renderWeek(); renderMonth(); renderList(); renderAllergy();
   }
 
-  $('grid').addEventListener('click', (e) => {
-    const c = e.target.closest('[data-d]');
-    if (c) select(Number(c.dataset.d));
-  });
   $('start').addEventListener('change', (e) => { if (e.target.value) setStart(e.target.value); });
-  $('prev').addEventListener('click', () => { viewM--; if (viewM < 0) { viewM = 11; viewY--; } renderGrid(); });
-  $('next').addEventListener('click', () => { viewM++; if (viewM > 11) { viewM = 0; viewY++; } renderGrid(); });
+  $('wprev').addEventListener('click', () => { weekStart = addDays(weekStart, -7); focusD = null; renderWeek(); });
+  $('wnext').addEventListener('click', () => { weekStart = addDays(weekStart, 7); focusD = null; renderWeek(); });
+  $('prev').addEventListener('click', () => { viewM--; if (viewM < 0) { viewM = 11; viewY--; } renderMonth(); });
+  $('next').addEventListener('click', () => { viewM++; if (viewM > 11) { viewM = 0; viewY++; } renderMonth(); });
+  $('grid').addEventListener('click', (e) => { const c = e.target.closest('[data-d]'); if (c) goTo(Number(c.dataset.d)); });
   $('goToday').addEventListener('click', () => {
     const td = dOf(TODAY);
-    showMonthOf(TODAY);
-    if (td) selD = td;
-    renderGrid(); renderDetail();
-  });
-
-  const tabs = { cal: $('view-cal'), list: $('view-list'), allergy: $('view-allergy') };
-  Object.keys(tabs).forEach((k) => {
-    $('tab-' + k).addEventListener('click', () => {
-      Object.keys(tabs).forEach((j) => { tabs[j].hidden = j !== k; $('tab-' + j).setAttribute('aria-selected', String(j === k)); });
-      store('bf-tab', k);
-    });
+    if (td) goTo(td);
+    else { weekStart = sundayOf(TODAY); focusD = null; renderWeek(); showTab('week'); }
+    viewY = TODAY.getFullYear(); viewM = TODAY.getMonth(); renderMonth();
   });
 
   setStart(store('bf-start') || iso(TODAY));
   const tab = store('bf-tab');
-  if (tab && tabs[tab]) $('tab-' + tab).click();
+  if (tab && tabs[tab]) showTab(tab);
 })();
 </script>
 </body>
