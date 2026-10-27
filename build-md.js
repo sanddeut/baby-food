@@ -7,7 +7,7 @@ const out = [
   '# 3. 6~10개월 이유식 달력 (일차 기준)',
   '',
   '> 실제 날짜로 보려면 `index.html`에서 시작일 선택. 이 표는 D1 = 이유식 시작일 기준.',
-  '> **굵은 글씨** = 테스트 중인 새 재료(1회차에만), ⚠ = 고위험 알레르기 식품, ▶ = 질감·횟수 바뀌는 날',
+  '> **굵은 글씨** = 테스트 중인 새 재료(1회차에만), ⚠ = 고위험 알레르기 식품(5일 테스트), ▶ = 질감·횟수 바뀌는 날, 유지 = 통과한 고위험 식품(주 2회 이상, 아무 끼니에)',
   '',
 ];
 for (let m = 6; m <= 10; m++) {
@@ -15,12 +15,12 @@ for (let m = 6; m <= 10; m++) {
   const f = days[0];
   out.push(`## ${m}개월 (D${f.d}~D${days[days.length - 1].d}) · ${f.stage}`, '');
   out.push(`- 고기 하루 ${f.meat} · 수유 하루 ${f.milk}`, '');
-  out.push('| 일차 | 질감 | 횟수 × 1회 양 | 1회차(오전) | 2회차 | 3회차 | 간식 | 알레르기 테스트 |');
-  out.push('|---|---|---|---|---|---|---|---|');
+  out.push('| 일차 | 질감 | 횟수 × 1회 양 | 1회차(오전) | 2회차 | 3회차 | 간식 | 유지 | 알레르기 테스트 |');
+  out.push('|---|---|---|---|---|---|---|---|---|');
   for (const p of days) {
     const t = p.test;
-    const test = t ? `${t.risky ? '⚠' : ''}${t.name} ${t.dayIndex}/3${t.dayIndex === 1 ? ` (${t.prep})` : ''}` : '복습';
-    out.push(`| D${p.d} | ${p.texture}${p.transition ? ' ▶' : ''} | ${p.meals.length}회 × ${p.amount} | ${md(p.meals[0])} | ${md(p.meals[1] || '')} | ${md(p.meals[2] || '')} | ${p.snack} | ${test} |`);
+    const test = t ? `${t.risky ? '⚠' : ''}${t.name} ${t.dayIndex}/${t.days}${t.dayIndex === 1 ? ` (${t.prep})` : ''}` : '복습';
+    out.push(`| D${p.d} | ${p.texture}${p.transition ? ' ▶' : ''} | ${p.meals.length}회 × ${p.amount} | ${md(p.meals[0])} | ${md(p.meals[1] || '')} | ${md(p.meals[2] || '')} | ${p.snack} | ${p.keep.join(', ')} | ${test} |`);
   }
   const trs = days.filter((p) => p.transition);
   if (trs.length) { out.push(''); trs.forEach((p) => out.push(`- ▶ D${p.d}: ${p.transition}`)); }

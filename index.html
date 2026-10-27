@@ -93,6 +93,8 @@ button:focus-visible, input:focus-visible, .cell:focus-visible { outline: 2px so
 .cell .ml { font-size: 12.5px; line-height: 1.4; word-break: keep-all; overflow-wrap: anywhere; }
 .cell .ml b.n.r { color: var(--risk); }
 .cell .sn { font-size: 11.5px; color: var(--muted); line-height: 1.35; }
+.cell .kp { font-size: 11.5px; color: var(--muted); line-height: 1.35; }
+.cell .wk { font-size: 11px; color: var(--risk); font-weight: 600; }
 .cell .tr { font-size: 11px; color: var(--accent); font-weight: 600; margin-top: auto; }
 
 .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); margin-top: 10px; }
@@ -171,7 +173,8 @@ footer { color: var(--muted); font-size: 12.5px; }
         <span><i class="sw st-후기"></i>후기</span>
         <span style="color:var(--risk)">⚠ 고위험 알레르기 식품</span>
         <span><b style="color:var(--accent)">굵은 글씨</b> 테스트 중인 새 재료</span>
-        <span>●○○ 테스트 1·2·3일차</span>
+        <span>●○○ 테스트 일차 (일반 3일 · 고위험 5일)</span>
+        <span>유지 = 통과한 고위험 식품, 주 2회 이상 아무 끼니에</span>
         <span style="color:var(--accent)">▶ 질감·횟수 바뀌는 날</span>
       </div>
     </div>
@@ -181,14 +184,14 @@ footer { color: var(--muted); font-size: 12.5px; }
   <section id="view-list" hidden>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>날짜</th><th>일차</th><th>단계·질감</th><th>횟수 × 1회 양</th><th>1회차 (오전)</th><th>2회차</th><th>3회차</th><th>간식</th><th>알레르기 테스트</th></tr></thead>
+        <thead><tr><th>날짜</th><th>일차</th><th>단계·질감</th><th>횟수 × 1회 양</th><th>1회차 (오전)</th><th>2회차</th><th>3회차</th><th>간식</th><th>유지 식품</th><th>알레르기 테스트</th></tr></thead>
         <tbody id="tbody" class="tnum"></tbody>
       </table>
     </div>
   </section>
 
   <section id="view-allergy" hidden>
-    <p class="sub" style="margin:0 0 10px">새 재료는 3일 연속, 오전 첫 끼에. 아래 날짜는 각 재료 테스트 첫날입니다.</p>
+    <p class="sub" style="margin:0 0 10px">새 재료는 한 번에 1가지, 오전 첫 끼에. 일반 재료는 3일, ⚠ 고위험 식품은 5일 동안 테스트합니다. 고위험 식품 첫날이 주말이면 시작일을 미뤄 평일에 맞추세요.</p>
     <div class="allergy" id="allergyList"></div>
   </section>
 
@@ -196,11 +199,13 @@ footer { color: var(--muted); font-size: 12.5px; }
     <div>
       <h3>알레르기 테스트</h3>
       <ul>
-        <li>새 재료는 한 번에 1가지, 3일 연속</li>
-        <li>오전 첫 끼에 소량 → 2일차부터 증량</li>
-        <li>발진·두드러기·구토·설사·혈변 → 그 재료 중단, 소아과</li>
-        <li>호흡곤란·처짐 → 즉시 응급실</li>
-        <li>아픈 날, 예방접종 당일·다음날은 새 재료 시작 보류</li>
+        <li>새 재료는 한 번에 1가지. 일반 재료 3일, ⚠ 고위험 식품 5일</li>
+        <li>고위험 식품: 평일 오전 첫 끼, 아주 소량 → 하루씩 2배로</li>
+        <li>먹인 뒤 2시간은 집에서 관찰 (어린이집 첫 시도 X)</li>
+        <li>발진·두드러기·구토·설사·혈변 → 중단, 사진 남기고 소아과. 진료 전까지 새 재료 멈춤</li>
+        <li>호흡곤란·쌕쌕거림·입술 붓기·처짐 → 즉시 119·응급실</li>
+        <li>아픈 날, 예방접종 당일·다음날은 새 재료 시작 보류 (그만큼 시작일 미루기)</li>
+        <li>심한 아토피나 이미 알레르기 진단이 있으면 달걀·땅콩 전 소아과 상담</li>
       </ul>
     </div>
     <div>
@@ -216,7 +221,8 @@ footer { color: var(--muted); font-size: 12.5px; }
       <ul>
         <li>소고기 하루 최소 1끼 (철분)</li>
         <li>굵은 글씨 = 테스트 중인 새 재료, 1회차에만 사용</li>
-        <li>돌 전 금지: 꿀, 생우유 음료, 간(소금·간장·설탕), 통견과</li>
+        <li>통과한 고위험 식품은 끊지 말고 주 2회 이상 (달력의 "유지")</li>
+        <li>돌 전 금지: 꿀, 생우유 음료, 간(소금·간장·설탕), 통견과·땅콩 덩어리</li>
       </ul>
     </div>
   </section>
@@ -276,10 +282,12 @@ footer { color: var(--muted); font-size: 12.5px; }
       const cm = (s) => esc(s.replace(/ \+ /g, '+')).replace(/★([^ +]+)/g, (_, n) => '<b class="n' + (t && t.risky ? ' r' : '') + '">' + (t && t.risky ? '⚠' : '') + n + '</b>');
       const mealLines = p.meals.map((m) => '<span class="ml">' + cm(m) + '</span>').join('') +
         (p.snack ? '<span class="sn">간식 ' + esc(p.snack) + '</span>' : '');
-      const dots = t ? '<span class="dots">' + ['●○○', '●●○', '●●●'][t.dayIndex - 1] + '</span>' : '<span class="dots">복습</span>';
+      const dots = t ? '<span class="dots">' + '●'.repeat(t.dayIndex) + '○'.repeat(t.days - t.dayIndex) + '</span>' : '<span class="dots">복습</span>';
+      const wknd = t && t.risky && t.dayIndex === 1 && (dt.getDay() === 0 || dt.getDay() === 6);
+      const keepLine = p.keep.length ? '<span class="kp">유지 ' + esc(p.keep.join('·')) + '</span>' : '';
       html += '<button type="button" class="cell' + (isToday ? ' today' : '') + (d === selD ? ' sel' : '') + '" data-d="' + d + '" aria-label="' + fmtLong(dt) + ' D' + d + '">' +
         '<span class="top"><span class="date tnum">' + day + '</span><span class="dn tnum">D' + d + '</span></span>' +
-        '<span class="tags"><span class="chip st-' + p.stage + '">' + p.texture + ' ×' + p.meals.length + '</span>' + dots + '</span>' + mealLines +
+        '<span class="tags"><span class="chip st-' + p.stage + '">' + p.texture + ' ×' + p.meals.length + '</span>' + dots + '</span>' + mealLines + keepLine + (wknd ? '<span class="wk">주말 시작 → 평일로 미루기</span>' : '') +
         (p.transition ? '<span class="tr">▶ ' + p.texture + '</span>' : '') + '</button>';
     }
     $('grid').innerHTML = html;
@@ -302,10 +310,12 @@ footer { color: var(--muted); font-size: 12.5px; }
       '<dt>수유</dt><dd>하루 ' + p.milk + '</dd></dl>';
     html += '<div><p class="sec-title">식단</p><ul class="meals">' +
       p.meals.map((m, i) => '<li><span class="lbl">' + labels[i] + '</span><span>' + meal(m) + '</span></li>').join('') +
-      (p.snack ? '<li><span class="lbl">간식</span><span>' + esc(p.snack) + ' (택1)</span></li>' : '') + '</ul></div>';
+      (p.snack ? '<li><span class="lbl">간식</span><span>' + esc(p.snack) + ' (택1)</span></li>' : '') +
+      (p.keep.length ? '<li><span class="lbl">유지</span><span>' + esc(p.keep.join(', ')) + ' (통과한 고위험 식품, 아무 끼니에 섞기)</span></li>' : '') + '</ul></div>';
     const t = p.test;
     if (t) {
-      html += '<div class="test' + (t.risky ? ' risk' : '') + '"><span class="t">' + (t.risky ? '⚠ 고위험 · ' : '') + '알레르기 테스트: ' + esc(t.name) + ' ' + t.dayIndex + '/3일차</span>' +
+      html += '<div class="test' + (t.risky ? ' risk' : '') + '"><span class="t">' + (t.risky ? '⚠ 고위험 · ' : '') + '알레르기 테스트: ' + esc(t.name) + ' ' + t.dayIndex + '/' + t.days + '일차</span>' +
+        (t.risky && t.dayIndex === 1 && (dt.getDay() === 0 || dt.getDay() === 6) ? '<span><b>주말이라 병원 진료가 어려울 수 있어요.</b> 시작일을 미뤄 평일 오전에 시작하세요.</span>' : '') +
         '<span>' + esc(t.prep) + '</span><span class="sub" style="margin:0">' + esc(t.note) + '</span></div>';
     } else {
       html += '<div class="test"><span class="t">새 재료 없음</span><span>' + esc(p.review) + '</span></div>';
@@ -321,16 +331,16 @@ footer { color: var(--muted); font-size: 12.5px; }
         '<td>' + p.stage + ' · ' + p.texture + (p.transition ? ' ▶' : '') + '</td>' +
         '<td>' + p.meals.length + '회 × ' + p.amount + '</td>' +
         [0, 1, 2].map((i) => '<td>' + (p.meals[i] ? meal(p.meals[i]) : '') + '</td>').join('') +
-        '<td>' + esc(p.snack) + '</td>' +
-        '<td' + (t && t.risky ? ' class="risk"' : '') + '>' + (t ? (t.risky ? '⚠' : '') + esc(t.name) + ' ' + t.dayIndex + '/3' : '복습') + '</td></tr>';
+        '<td>' + esc(p.snack) + '</td><td>' + esc(p.keep.join(', ')) + '</td>' +
+        '<td' + (t && t.risky ? ' class="risk"' : '') + '>' + (t ? (t.risky ? '⚠' : '') + esc(t.name) + ' ' + t.dayIndex + '/' + t.days : '복습') + '</td></tr>';
     }).join('');
   }
 
   function renderAllergy() {
     $('allergyList').innerHTML = P.BLOCKS.map((b, i) => {
       if (b[0] === '-') return '';
-      const d = i * 3 + 1;
-      return '<span class="a' + (b[2] ? ' risk' : '') + '">' + (b[2] ? '⚠ ' : '') + esc(b[1]) + '<small class="tnum">' + fmt(dateOf(d)) + '~ · D' + d + '</small></span>';
+      const s = P.SPANS[i], e = s.start + s.len - 1;
+      return '<span class="a' + (b[2] ? ' risk' : '') + '">' + (b[2] ? '⚠ ' : '') + esc(b[1]) + '<small class="tnum">' + fmt(dateOf(s.start)) + '~' + fmt(dateOf(e)) + ' · ' + s.len + '일</small></span>';
     }).join('');
   }
 
