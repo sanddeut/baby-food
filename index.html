@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@700&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
 <style>
-/* 레이아웃: 위에 시작일·월령 요약, 가운데 실제 날짜 달력(셀 = 그날 질감·새 재료), 선택한 날 상세는 달력 옆(넓은 화면) 또는 아래(폰) */
+/* 레이아웃: 위에 시작일, 가운데 실제 날짜 달력(셀 = 그날 질감·끼니별 전체 재료), 선택한 날 상세는 달력 옆(넓은 화면) 또는 아래(폰) */
 :root {
   --bg: #F5F7F2;
   --surface: #FFFFFF;
@@ -45,7 +45,7 @@ body {
   padding-right: max(16px, env(safe-area-inset-right, 0px));
   padding-block: 24px 48px;
 }
-.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 24px; }
+.wrap { max-width: 1440px; margin: 0 auto; display: grid; gap: 24px; }
 h1 { font-family: var(--font-display); font-size: 30px; line-height: 1.25; margin: 0; text-wrap: balance; }
 h2 { font-family: var(--font-display); font-size: 20px; margin: 0; text-wrap: balance; }
 .sub { color: var(--muted); margin: 6px 0 0; }
@@ -70,15 +70,16 @@ button:focus-visible, input:focus-visible, .cell:focus-visible { outline: 2px so
 .tabs button { border: 1px solid var(--line); background: transparent; color: var(--muted); padding: 6px 14px; border-radius: 999px; }
 .tabs button[aria-selected=true] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
 
-.main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: start; }
-@media (max-width: 900px) { .main { grid-template-columns: minmax(0, 1fr); } }
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+@media (max-width: 1200px) { .main { grid-template-columns: minmax(0, 1fr); } }
 
 .calhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; }
 .calhead h2 { font-size: 22px; }
-.grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.gridwrap { overflow-x: auto; }
+.grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; min-width: 840px; }
 .dow { font-size: 12px; color: var(--muted); text-align: center; padding: 4px 0; font-weight: 500; }
 .dow.sun { color: var(--risk); }
-.cell { min-height: 92px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 5px 6px; display: flex; flex-direction: column; gap: 3px; text-align: left; color: var(--fg); min-width: 0; }
+.cell { min-height: 150px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 6px 7px; display: flex; flex-direction: column; gap: 4px; text-align: left; color: var(--fg); min-width: 0; }
 .cell.off { background: transparent; border-style: dashed; opacity: .55; }
 .cell.blank { visibility: hidden; }
 .cell.today { box-shadow: inset 0 0 0 2px var(--accent); }
@@ -87,16 +88,12 @@ button:focus-visible, input:focus-visible, .cell:focus-visible { outline: 2px so
 .cell .date { font-weight: 600; }
 .cell .dn { color: var(--muted); }
 .chip { font-size: 11px; border-radius: 4px; padding: 0 4px; width: fit-content; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cell .new { font-size: 12.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cell .new.risk { color: var(--risk); }
+.cell .tags { display: flex; align-items: center; gap: 6px; }
 .cell .dots { letter-spacing: 1px; font-size: 10px; color: var(--muted); }
-.cell .tr { font-size: 11px; color: var(--accent); font-weight: 600; }
-@media (max-width: 560px) {
-  .cell { min-height: 64px; padding: 3px; }
-  .cell .dn, .cell .chip, .cell .dots { display: none; }
-  .cell .new { font-size: 11px; }
-  .cell .tr { font-size: 10px; }
-}
+.cell .ml { font-size: 12.5px; line-height: 1.4; word-break: keep-all; overflow-wrap: anywhere; }
+.cell .ml b.n.r { color: var(--risk); }
+.cell .sn { font-size: 11.5px; color: var(--muted); line-height: 1.35; }
+.cell .tr { font-size: 11px; color: var(--accent); font-weight: 600; margin-top: auto; }
 
 .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); margin-top: 10px; }
 .legend span { display: inline-flex; align-items: center; gap: 5px; }
@@ -167,12 +164,13 @@ footer { color: var(--muted); font-size: 12.5px; }
         <h2 id="monthTitle" class="tnum"></h2>
         <button class="btn" id="next" type="button" aria-label="다음 달">다음 ›</button>
       </div>
-      <div class="grid" id="grid"></div>
+      <div class="gridwrap"><div class="grid" id="grid"></div></div>
       <div class="legend">
         <span><i class="sw st-초기"></i>초기</span>
         <span><i class="sw st-중기"></i>중기</span>
         <span><i class="sw st-후기"></i>후기</span>
         <span style="color:var(--risk)">⚠ 고위험 알레르기 식품</span>
+        <span><b style="color:var(--accent)">굵은 글씨</b> 테스트 중인 새 재료</span>
         <span>●○○ 테스트 1·2·3일차</span>
         <span style="color:var(--accent)">▶ 질감·횟수 바뀌는 날</span>
       </div>
@@ -217,7 +215,7 @@ footer { color: var(--muted); font-size: 12.5px; }
       <h3>매일 지킬 것</h3>
       <ul>
         <li>소고기 하루 최소 1끼 (철분)</li>
-        <li>★ 표시 = 테스트 중인 새 재료, 1회차에만 사용</li>
+        <li>굵은 글씨 = 테스트 중인 새 재료, 1회차에만 사용</li>
         <li>돌 전 금지: 꿀, 생우유 음료, 간(소금·간장·설탕), 통견과</li>
       </ul>
     </div>
@@ -275,11 +273,13 @@ footer { color: var(--muted); font-size: 12.5px; }
       }
       const p = PLAN[d - 1];
       const t = p.test;
-      const newLine = t ? '<span class="new' + (t.risky ? ' risk' : '') + '">' + (t.risky ? '⚠' : '') + esc(t.name) + '</span>' +
-        '<span class="dots">' + ['●○○', '●●○', '●●●'][t.dayIndex - 1] + '</span>' : '<span class="new" style="color:var(--muted)">복습</span>';
+      const cm = (s) => esc(s.replace(/ \+ /g, '+')).replace(/★([^ +]+)/g, (_, n) => '<b class="n' + (t && t.risky ? ' r' : '') + '">' + (t && t.risky ? '⚠' : '') + n + '</b>');
+      const mealLines = p.meals.map((m) => '<span class="ml">' + cm(m) + '</span>').join('') +
+        (p.snack ? '<span class="sn">간식 ' + esc(p.snack) + '</span>' : '');
+      const dots = t ? '<span class="dots">' + ['●○○', '●●○', '●●●'][t.dayIndex - 1] + '</span>' : '<span class="dots">복습</span>';
       html += '<button type="button" class="cell' + (isToday ? ' today' : '') + (d === selD ? ' sel' : '') + '" data-d="' + d + '" aria-label="' + fmtLong(dt) + ' D' + d + '">' +
         '<span class="top"><span class="date tnum">' + day + '</span><span class="dn tnum">D' + d + '</span></span>' +
-        '<span class="chip st-' + p.stage + '">' + p.texture + ' ×' + p.meals.length + '</span>' + newLine +
+        '<span class="tags"><span class="chip st-' + p.stage + '">' + p.texture + ' ×' + p.meals.length + '</span>' + dots + '</span>' + mealLines +
         (p.transition ? '<span class="tr">▶ ' + p.texture + '</span>' : '') + '</button>';
     }
     $('grid').innerHTML = html;
