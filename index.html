@@ -1,3 +1,8 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>6~10개월 이유식 달력</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -35,7 +40,7 @@
 }
 * { box-sizing: border-box; }
 body {
-  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
   padding-block: 24px 48px;
@@ -137,7 +142,8 @@ td.risk { color: var(--risk); font-weight: 600; }
 footer { color: var(--muted); font-size: 12.5px; }
 @media (prefers-reduced-motion: no-preference) { .cell { transition: border-color .15s; } }
 </style>
-
+</head>
+<body>
 <div class="wrap">
   <header>
     <h1>6~10개월 이유식 달력</h1>
@@ -394,3 +400,5 @@ footer { color: var(--muted); font-size: 12.5px; }
   if (tab && tabs[tab]) $('tab-' + tab).click();
 })();
 </script>
+</body>
+</html>
