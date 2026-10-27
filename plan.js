@@ -199,11 +199,8 @@
     let snack = '';
     if (ph.snack) snack = rot(known.f.concat(known.d), d, d >= T.three ? 2 : 1).join(', ');
 
-    // 유지: 통과한 고위험 식품을 주 2회 이상. 오늘 식단·간식에 이미 있는 것은 제외하고 순서대로 채움
+    // 유지 후보: 통과한 고위험 식품 (테스트 중인 것과 같은 계열 제외). 실제 선택은 plan()에서
     const keepAll = [...new Set(passedRisky.filter((x) => !family.includes(x)).map((x) => keepName(x, eggOk)).filter(Boolean))];
-    const today = meals.map((m) => m.join(' ')).join(' ') + ' ' + snack;
-    const perDay = Math.ceil((keepAll.length * 2) / 7);
-    const keep = rot(keepAll, d * perDay, perDay).filter((x) => !today.includes(x));
 
     const span = SPANS[b];
     const di = d - span.start + 1;
@@ -215,14 +212,28 @@
     return {
       d, ...ph,
       meals: meals.map((m) => m.join(' + ')),
-      snack, keep, test,
+      snack, keepAll, keep: [], test,
       review: cat === '-' ? prep : '',
     };
   }
 
+  // 유지 식품: 주 2회 이상 되도록 가장 오래 안 먹은 것부터 하루 몇 가지씩 채움
   function plan() {
     const out = [];
-    for (let d = 1; d <= DAYS; d++) out.push(day(d));
+    const last = {};
+    for (let d = 1; d <= DAYS; d++) {
+      const x = day(d);
+      const today = x.meals.join(' ') + ' ' + x.snack;
+      const perDay = Math.ceil((x.keepAll.length * 2) / 7);
+      x.keep = x.keepAll
+        .filter((k) => !today.includes(k))
+        .sort((a, b) => (last[a] || 0) - (last[b] || 0))
+        .slice(0, perDay);
+      const eaten = today + ' ' + x.keep.join(' ');
+      x.keepAll.forEach((k) => { if (eaten.includes(k)) last[k] = d; });
+      delete x.keepAll;
+      out.push(x);
+    }
     return out;
   }
 
