@@ -1,0 +1,396 @@
+<title>6~10개월 이유식 달력</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@700&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<style>
+/* 레이아웃: 위에 시작일·월령 요약, 가운데 실제 날짜 달력(셀 = 그날 질감·새 재료), 선택한 날 상세는 달력 옆(넓은 화면) 또는 아래(폰) */
+:root {
+  --bg: #F5F7F2;
+  --surface: #FFFFFF;
+  --fg: #1E2620;
+  --muted: #5D6A60;
+  --line: #DCE2D7;
+  --accent: #2F6B4F;
+  --accent-fg: #FFFFFF;
+  --early: #F3E6B8;
+  --mid: #D3E8CC;
+  --late: #CDE0EE;
+  --risk: #A94F14;
+  --risk-bg: #FBE5D3;
+  --font-display: "Gowun Batang", "Noto Serif KR", serif;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131714; --surface: #1B201C; --fg: #E6ECE5; --muted: #9AA69D; --line: #2D3530;
+    --accent: #7FC59E; --accent-fg: #0F1A13; --early: #4A4227; --mid: #2B4731; --late: #273D4B;
+    --risk: #F2A46C; --risk-bg: #3D281A; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131714; --surface: #1B201C; --fg: #E6ECE5; --muted: #9AA69D; --line: #2D3530;
+  --accent: #7FC59E; --accent-fg: #0F1A13; --early: #4A4227; --mid: #2B4731; --late: #273D4B;
+  --risk: #F2A46C; --risk-bg: #3D281A; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 48px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 24px; }
+h1 { font-family: var(--font-display); font-size: 30px; line-height: 1.25; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-size: 20px; margin: 0; text-wrap: balance; }
+.sub { color: var(--muted); margin: 6px 0 0; }
+.tnum { font-variant-numeric: tabular-nums; }
+
+.start { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: end; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.start label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); font-weight: 500; }
+.start input[type=date] { font: inherit; font-size: 17px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--fg); }
+.start .range { font-size: 14px; color: var(--muted); }
+.start .range b { color: var(--fg); }
+button { font: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible, .cell:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn { border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 8px; padding: 7px 12px; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+
+.phases { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.phase { border-radius: 10px; padding: 12px 14px; display: grid; gap: 2px; font-size: 13px; }
+.phase .m { font-weight: 600; font-size: 15px; }
+.phase .dates { color: var(--muted); }
+.st-초기 { background: var(--early); }
+.st-중기 { background: var(--mid); }
+.st-후기 { background: var(--late); }
+
+.tabs { display: flex; gap: 6px; }
+.tabs button { border: 1px solid var(--line); background: transparent; color: var(--muted); padding: 6px 14px; border-radius: 999px; }
+.tabs button[aria-selected=true] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: start; }
+@media (max-width: 900px) { .main { grid-template-columns: minmax(0, 1fr); } }
+
+.calhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; }
+.calhead h2 { font-size: 22px; }
+.grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.dow { font-size: 12px; color: var(--muted); text-align: center; padding: 4px 0; font-weight: 500; }
+.dow.sun { color: var(--risk); }
+.cell { min-height: 92px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 5px 6px; display: flex; flex-direction: column; gap: 3px; text-align: left; color: var(--fg); min-width: 0; }
+.cell.off { background: transparent; border-style: dashed; opacity: .55; }
+.cell.blank { visibility: hidden; }
+.cell.today { box-shadow: inset 0 0 0 2px var(--accent); }
+.cell.sel { border-color: var(--fg); box-shadow: 0 0 0 1px var(--fg); }
+.cell .top { display: flex; justify-content: space-between; gap: 4px; font-size: 12px; }
+.cell .date { font-weight: 600; }
+.cell .dn { color: var(--muted); }
+.chip { font-size: 11px; border-radius: 4px; padding: 0 4px; width: fit-content; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cell .new { font-size: 12.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cell .new.risk { color: var(--risk); }
+.cell .dots { letter-spacing: 1px; font-size: 10px; color: var(--muted); }
+.cell .tr { font-size: 11px; color: var(--accent); font-weight: 600; }
+@media (max-width: 560px) {
+  .cell { min-height: 64px; padding: 3px; }
+  .cell .dn, .cell .chip, .cell .dots { display: none; }
+  .cell .new { font-size: 11px; }
+  .cell .tr { font-size: 10px; }
+}
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); margin-top: 10px; }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+.detail { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: grid; gap: 14px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+@media (max-width: 900px) { .detail { position: static; } }
+.detail .when { font-family: var(--font-display); font-size: 22px; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 14px; margin: 0; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; font-weight: 500; }
+.meals { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.meals li { display: grid; grid-template-columns: 64px 1fr; gap: 8px; font-size: 14px; }
+.meals .lbl { color: var(--muted); font-size: 13px; }
+b.n { color: var(--accent); }
+.test { border-radius: 8px; padding: 10px 12px; background: var(--bg); font-size: 14px; display: grid; gap: 4px; }
+.test.risk { background: var(--risk-bg); }
+.test .t { font-weight: 600; }
+.test.risk .t { color: var(--risk); }
+.trn { font-size: 14px; border-left: 3px solid var(--accent); padding-left: 10px; }
+.sec-title { font-size: 12px; letter-spacing: .06em; color: var(--muted); font-weight: 600; margin: 0 0 6px; }
+
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 13px; min-width: 900px; }
+th, td { padding: 7px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+th { position: sticky; top: 0; background: var(--surface); color: var(--muted); font-weight: 600; font-size: 12px; }
+tr.today td { background: var(--mid); }
+td.risk { color: var(--risk); font-weight: 600; }
+
+.allergy { display: flex; flex-wrap: wrap; gap: 6px; }
+.allergy .a { font-size: 13px; border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; background: var(--surface); }
+.allergy .a.risk { border-color: var(--risk); color: var(--risk); background: var(--risk-bg); }
+.allergy .a small { color: var(--muted); margin-left: 4px; }
+.allergy .a.risk small { color: inherit; opacity: .8; }
+
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; font-size: 14px; }
+.rules ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
+.rules h3 { font-size: 15px; margin: 0 0 6px; }
+footer { color: var(--muted); font-size: 12.5px; }
+@media (prefers-reduced-motion: no-preference) { .cell { transition: border-color .15s; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>6~10개월 이유식 달력</h1>
+    <p class="sub">시작일만 고르면 150일 일정이 실제 날짜에 맞춰 채워집니다. 날짜를 누르면 그날 질감·횟수·양·식단·알레르기 테스트가 나옵니다.</p>
+  </header>
+
+  <section class="start" aria-label="시작일">
+    <label for="start">이유식 시작일 (D1, 보통 만 6개월 무렵)
+      <input type="date" id="start">
+    </label>
+    <button class="btn" id="goToday" type="button">오늘로 이동</button>
+    <div class="range tnum" id="range"></div>
+  </section>
+
+  <section class="phases" id="phases" aria-label="월령별 요약"></section>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tab-cal" aria-selected="true" type="button">달력</button>
+    <button role="tab" id="tab-list" aria-selected="false" type="button">전체 목록</button>
+    <button role="tab" id="tab-allergy" aria-selected="false" type="button">알레르기 일정</button>
+  </div>
+
+  <section id="view-cal" class="main">
+    <div>
+      <div class="calhead">
+        <button class="btn" id="prev" type="button" aria-label="이전 달">‹ 이전</button>
+        <h2 id="monthTitle" class="tnum"></h2>
+        <button class="btn" id="next" type="button" aria-label="다음 달">다음 ›</button>
+      </div>
+      <div class="grid" id="grid"></div>
+      <div class="legend">
+        <span><i class="sw st-초기"></i>초기</span>
+        <span><i class="sw st-중기"></i>중기</span>
+        <span><i class="sw st-후기"></i>후기</span>
+        <span style="color:var(--risk)">⚠ 고위험 알레르기 식품</span>
+        <span>●○○ 테스트 1·2·3일차</span>
+        <span style="color:var(--accent)">▶ 질감·횟수 바뀌는 날</span>
+      </div>
+    </div>
+    <aside class="detail" id="detail" aria-live="polite"></aside>
+  </section>
+
+  <section id="view-list" hidden>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>날짜</th><th>일차</th><th>단계·질감</th><th>횟수 × 1회 양</th><th>1회차 (오전)</th><th>2회차</th><th>3회차</th><th>간식</th><th>알레르기 테스트</th></tr></thead>
+        <tbody id="tbody" class="tnum"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="view-allergy" hidden>
+    <p class="sub" style="margin:0 0 10px">새 재료는 3일 연속, 오전 첫 끼에. 아래 날짜는 각 재료 테스트 첫날입니다.</p>
+    <div class="allergy" id="allergyList"></div>
+  </section>
+
+  <section class="rules" aria-label="기본 규칙">
+    <div>
+      <h3>알레르기 테스트</h3>
+      <ul>
+        <li>새 재료는 한 번에 1가지, 3일 연속</li>
+        <li>오전 첫 끼에 소량 → 2일차부터 증량</li>
+        <li>발진·두드러기·구토·설사·혈변 → 그 재료 중단, 소아과</li>
+        <li>호흡곤란·처짐 → 즉시 응급실</li>
+        <li>아픈 날, 예방접종 당일·다음날은 새 재료 시작 보류</li>
+      </ul>
+    </div>
+    <div>
+      <h3>질감 전환</h3>
+      <ul>
+        <li>▶ 표시 날에 전환하되, 전환 기준 미충족이면 이전 질감 1주 더</li>
+        <li>일정이 밀리면 시작일을 그만큼 뒤로 바꾸면 전체가 다시 맞춰짐</li>
+        <li>전환 후 거부·구역질 3일 이상 → 이전 단계로, 1주 후 재시도</li>
+      </ul>
+    </div>
+    <div>
+      <h3>매일 지킬 것</h3>
+      <ul>
+        <li>소고기 하루 최소 1끼 (철분)</li>
+        <li>★ 표시 = 테스트 중인 새 재료, 1회차에만 사용</li>
+        <li>돌 전 금지: 꿀, 생우유 음료, 간(소금·간장·설탕), 통견과</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>국내 육아서·소아과·보건소 안내에서 흔히 쓰는 기준을 바탕으로 한 일반 일정입니다. 양과 시기는 아기에 따라 다를 수 있으며, 알레르기·질환 이력이 있으면 소아청소년과와 먼저 상의하세요.</footer>
+</div>
+
+<script src="plan.js"></script>
+<script>
+(function () {
+  const P = window.BabyFoodPlan;
+  const PLAN = P.plan();
+  const DOW = ['일', '월', '화', '수', '목', '금', '토'];
+  const $ = (id) => document.getElementById(id);
+
+  const pad = (n) => String(n).padStart(2, '0');
+  const iso = (dt) => dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate());
+  const parse = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+  const addDays = (dt, n) => new Date(dt.getFullYear(), dt.getMonth(), dt.getDate() + n);
+  const diffDays = (a, b) => Math.round((Date.UTC(a.getFullYear(), a.getMonth(), a.getDate()) - Date.UTC(b.getFullYear(), b.getMonth(), b.getDate())) / 864e5);
+  const fmt = (dt) => (dt.getMonth() + 1) + '/' + dt.getDate() + '(' + DOW[dt.getDay()] + ')';
+  const fmtLong = (dt) => dt.getFullYear() + '년 ' + (dt.getMonth() + 1) + '월 ' + dt.getDate() + '일 (' + DOW[dt.getDay()] + ')';
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const meal = (s) => esc(s).replace(/★([^ +]+)/g, '<b class="n">$1</b>');
+
+  const TODAY = new Date(); TODAY.setHours(0, 0, 0, 0);
+  let start, viewY, viewM, selD = 1;
+
+  function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+
+  function dateOf(d) { return addDays(start, d - 1); }
+  function dOf(dt) { const n = diffDays(dt, start) + 1; return n >= 1 && n <= P.DAYS ? n : null; }
+
+  function renderRange() {
+    const end = dateOf(P.DAYS);
+    const td = dOf(TODAY);
+    $('range').innerHTML = '<b>' + fmtLong(start) + '</b> ~ <b>' + fmtLong(end) + '</b> (150일)' +
+      (td ? ' · 오늘은 <b>D' + td + '</b>' : '');
+  }
+
+  function renderPhases() {
+    const MONTHS = [
+      [6, 1, 30, '초기', '10배죽 → 8배죽', '1회 → 2회 (D22~)', '10~80g'],
+      [7, 31, 60, '중기', '6배죽 (D32~)', '2회', '70~100g'],
+      [8, 61, 90, '중기', '5배죽 (D62~)', '2회', '100~120g'],
+      [9, 91, 120, '후기', '4배죽 (D92~)', '3회 + 간식 1', '100~120g'],
+      [10, 121, 150, '후기', '3배죽 → 진밥 (D137~)', '3회 + 간식 1~2', '120~150g'],
+    ];
+    $('phases').innerHTML = MONTHS.map(([m, a, b, st, tex, cnt, amt]) => {
+      const p = PLAN[a - 1];
+      return '<div class="phase st-' + st + '"><span class="m">' + m + '개월 · ' + st + '</span>' +
+        '<span class="dates tnum">' + fmt(dateOf(a)) + ' ~ ' + fmt(dateOf(b)) + ' · D' + a + '~' + b + '</span>' +
+        '<span>' + tex + '</span><span>' + cnt + ' · 1회 ' + amt + '</span>' +
+        '<span class="dates">고기 하루 ' + p.meat + ' · 수유 ' + p.milk + '</span></div>';
+    }).join('');
+  }
+
+  function renderGrid() {
+    $('monthTitle').textContent = viewY + '년 ' + (viewM + 1) + '월';
+    const first = new Date(viewY, viewM, 1);
+    const days = new Date(viewY, viewM + 1, 0).getDate();
+    let html = DOW.map((w, i) => '<div class="dow' + (i === 0 ? ' sun' : '') + '">' + w + '</div>').join('');
+    for (let i = 0; i < first.getDay(); i++) html += '<div class="cell blank" aria-hidden="true"></div>';
+    for (let day = 1; day <= days; day++) {
+      const dt = new Date(viewY, viewM, day);
+      const d = dOf(dt);
+      const isToday = diffDays(dt, TODAY) === 0;
+      if (!d) {
+        html += '<div class="cell off' + (isToday ? ' today' : '') + '"><div class="top"><span class="date">' + day + '</span></div></div>';
+        continue;
+      }
+      const p = PLAN[d - 1];
+      const t = p.test;
+      const newLine = t ? '<span class="new' + (t.risky ? ' risk' : '') + '">' + (t.risky ? '⚠' : '') + esc(t.name) + '</span>' +
+        '<span class="dots">' + ['●○○', '●●○', '●●●'][t.dayIndex - 1] + '</span>' : '<span class="new" style="color:var(--muted)">복습</span>';
+      html += '<button type="button" class="cell' + (isToday ? ' today' : '') + (d === selD ? ' sel' : '') + '" data-d="' + d + '" aria-label="' + fmtLong(dt) + ' D' + d + '">' +
+        '<span class="top"><span class="date tnum">' + day + '</span><span class="dn tnum">D' + d + '</span></span>' +
+        '<span class="chip st-' + p.stage + '">' + p.texture + ' ×' + p.meals.length + '</span>' + newLine +
+        (p.transition ? '<span class="tr">▶ ' + p.texture + '</span>' : '') + '</button>';
+    }
+    $('grid').innerHTML = html;
+    $('prev').disabled = new Date(viewY, viewM, 1) <= new Date(start.getFullYear(), start.getMonth(), 1);
+    const end = dateOf(P.DAYS);
+    $('next').disabled = new Date(viewY, viewM, 1) >= new Date(end.getFullYear(), end.getMonth(), 1);
+  }
+
+  function renderDetail() {
+    const p = PLAN[selD - 1];
+    const dt = dateOf(selD);
+    const labels = p.meals.length === 1 ? ['오전'] : p.meals.length === 2 ? ['1회 (오전)', '2회 (오후)'] : ['아침', '점심', '저녁'];
+    let html = '<div><div class="when tnum">' + fmtLong(dt) + '</div><div class="sub tnum">D' + selD + ' · ' + p.month + '개월</div></div>';
+    if (p.transition) html += '<div class="trn">▶ ' + esc(p.transition) + '</div>';
+    html += '<dl class="kv tnum">' +
+      '<dt>단계·질감</dt><dd>' + p.stage + ' · ' + p.texture + '</dd>' +
+      '<dt>하루 횟수</dt><dd>' + p.meals.length + '회' + (p.snack ? ' + 간식 ' + p.snack : '') + '</dd>' +
+      '<dt>1회 양</dt><dd>' + p.amount + '</dd>' +
+      '<dt>고기</dt><dd>하루 ' + p.meat + '</dd>' +
+      '<dt>수유</dt><dd>하루 ' + p.milk + '</dd></dl>';
+    html += '<div><p class="sec-title">식단</p><ul class="meals">' +
+      p.meals.map((m, i) => '<li><span class="lbl">' + labels[i] + '</span><span>' + meal(m) + '</span></li>').join('') +
+      (p.snack ? '<li><span class="lbl">간식</span><span>' + esc(p.snack) + ' (택1)</span></li>' : '') + '</ul></div>';
+    const t = p.test;
+    if (t) {
+      html += '<div class="test' + (t.risky ? ' risk' : '') + '"><span class="t">' + (t.risky ? '⚠ 고위험 · ' : '') + '알레르기 테스트: ' + esc(t.name) + ' ' + t.dayIndex + '/3일차</span>' +
+        '<span>' + esc(t.prep) + '</span><span class="sub" style="margin:0">' + esc(t.note) + '</span></div>';
+    } else {
+      html += '<div class="test"><span class="t">새 재료 없음</span><span>' + esc(p.review) + '</span></div>';
+    }
+    $('detail').innerHTML = html;
+  }
+
+  function renderList() {
+    const td = dOf(TODAY);
+    $('tbody').innerHTML = PLAN.map((p) => {
+      const t = p.test;
+      return '<tr' + (p.d === td ? ' class="today"' : '') + '><td>' + fmt(dateOf(p.d)) + '</td><td>D' + p.d + '</td>' +
+        '<td>' + p.stage + ' · ' + p.texture + (p.transition ? ' ▶' : '') + '</td>' +
+        '<td>' + p.meals.length + '회 × ' + p.amount + '</td>' +
+        [0, 1, 2].map((i) => '<td>' + (p.meals[i] ? meal(p.meals[i]) : '') + '</td>').join('') +
+        '<td>' + esc(p.snack) + '</td>' +
+        '<td' + (t && t.risky ? ' class="risk"' : '') + '>' + (t ? (t.risky ? '⚠' : '') + esc(t.name) + ' ' + t.dayIndex + '/3' : '복습') + '</td></tr>';
+    }).join('');
+  }
+
+  function renderAllergy() {
+    $('allergyList').innerHTML = P.BLOCKS.map((b, i) => {
+      if (b[0] === '-') return '';
+      const d = i * 3 + 1;
+      return '<span class="a' + (b[2] ? ' risk' : '') + '">' + (b[2] ? '⚠ ' : '') + esc(b[1]) + '<small class="tnum">' + fmt(dateOf(d)) + '~ · D' + d + '</small></span>';
+    }).join('');
+  }
+
+  function select(d) {
+    selD = d;
+    renderGrid(); renderDetail();
+  }
+
+  function showMonthOf(dt) { viewY = dt.getFullYear(); viewM = dt.getMonth(); }
+
+  function setStart(s, keepView) {
+    start = parse(s);
+    $('start').value = s;
+    store('bf-start', s);
+    const td = dOf(TODAY);
+    if (!keepView) { selD = td || 1; showMonthOf(dateOf(selD)); }
+    renderRange(); renderPhases(); renderGrid(); renderDetail(); renderList(); renderAllergy();
+  }
+
+  $('grid').addEventListener('click', (e) => {
+    const c = e.target.closest('[data-d]');
+    if (c) select(Number(c.dataset.d));
+  });
+  $('start').addEventListener('change', (e) => { if (e.target.value) setStart(e.target.value); });
+  $('prev').addEventListener('click', () => { viewM--; if (viewM < 0) { viewM = 11; viewY--; } renderGrid(); });
+  $('next').addEventListener('click', () => { viewM++; if (viewM > 11) { viewM = 0; viewY++; } renderGrid(); });
+  $('goToday').addEventListener('click', () => {
+    const td = dOf(TODAY);
+    showMonthOf(TODAY);
+    if (td) selD = td;
+    renderGrid(); renderDetail();
+  });
+
+  const tabs = { cal: $('view-cal'), list: $('view-list'), allergy: $('view-allergy') };
+  Object.keys(tabs).forEach((k) => {
+    $('tab-' + k).addEventListener('click', () => {
+      Object.keys(tabs).forEach((j) => { tabs[j].hidden = j !== k; $('tab-' + j).setAttribute('aria-selected', String(j === k)); });
+      store('bf-tab', k);
+    });
+  });
+
+  setStart(store('bf-start') || iso(TODAY));
+  const tab = store('bf-tab');
+  if (tab && tabs[tab]) $('tab-' + tab).click();
+})();
+</script>
